@@ -5,111 +5,105 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.UUID;
 
 @Service
 public class sessionService {
-    @Getter
-    @Autowired
-    private session session;
+
     @Autowired
     private DataSource dataSource;
-    private String idGenerator() {
+
+    private String generateSessionId() {
         return UUID.randomUUID().toString();
     }
-    public String newSession(String user_id){
-        String session_id=idGenerator();
-        String addSessionQuery="insert into master.dbo.sessions(user_id,session_id) values(?,?)";
-        try{
-            Connection addSessionConnection=dataSource.getConnection();
-            PreparedStatement addSessionPreparedStatement=addSessionConnection.prepareStatement(addSessionQuery);
-            addSessionPreparedStatement.setString(1,user_id);
-            addSessionPreparedStatement.setString(2,session_id);
-            addSessionPreparedStatement.executeUpdate();
-            addSessionPreparedStatement.close();
-            addSessionConnection.close();
+
+    /**
+     * Tạo session mới cho user và lưu vào SQL Server.
+     */
+    public String newSession(String user_id) {
+        String session_id = generateSessionId();
+        String query = "INSERT INTO master.dbo.sessions (user_id, session_id) VALUES (?, ?)";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, user_id);
+            stmt.setString(2, session_id);
+            stmt.executeUpdate();
             return session_id;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("❌ Error creating session", e);
         }
     }
 
+    /**
+     * Kiểm tra session có hợp lệ không.
+     */
+    public boolean checkSession(String session_id) {
+        String query = "SELECT 1 FROM master.dbo.sessions WHERE session_id = ?";
 
-    public boolean checkSession(String session_id){
-        String checkSessionQuery="select * from master.dbo.sessions where session_id=?";
-        try {
-            Connection checkSessionConnection=dataSource.getConnection();
-            PreparedStatement checkSessionStatement=checkSessionConnection.prepareStatement(checkSessionQuery);
-            checkSessionStatement.setString(1,session_id);
-            ResultSet checkSessionResult=checkSessionStatement.executeQuery();
-            if (checkSessionResult.next()){
-                checkSessionConnection.close();
-                checkSessionStatement.close();
-                checkSessionResult.close();
-                return true;
-            }else{
-                checkSessionConnection.close();
-                checkSessionStatement.close();
-                checkSessionResult.close();
-                return false;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, session_id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }/*
-    public String getSessionIdFromUser(String user_id){
-        String session_id="";
-        String getUserIdFromSessionQuery="select session_id from master.dbo.sessions where user_id=?";
-        try {
-            Connection getSessionIdFromUserConnection=dataSource.getConnection();
-            PreparedStatement getSessionIdFromUserStatement=getSessionIdFromUserConnection.prepareStatement(getUserIdFromSessionQuery);
-            getSessionIdFromUserStatement.setString(1,user_id);
-            ResultSet getSessionIdFromUserResult=getSessionIdFromUserStatement.executeQuery();
-            if (getSessionIdFromUserResult.next()){
-                getSessionIdFromUserResult.getString("session_id");
-            }
-            getSessionIdFromUserConnection.close();
-            getSessionIdFromUserStatement.close();
-            getSessionIdFromUserResult.close();
-            return session_id;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }*/
-    public String getUserIdFromSession(String session_id){
-        String userId="";
-        String getUserIdFromSessionQuery="select user_id from master.dbo.sessions where session_id=?";
-        try {
-            Connection getUserIdFromSessionConnection=dataSource.getConnection();
-            PreparedStatement getUserIdFromSessionStatement=getUserIdFromSessionConnection.prepareStatement(getUserIdFromSessionQuery);
-            getUserIdFromSessionStatement.setString(1,session_id);
-            ResultSet getUserIdFromSessionResult=getUserIdFromSessionStatement.executeQuery();
-            if (getUserIdFromSessionResult.next()){
-                userId=getUserIdFromSessionResult.getString("user_id");
-            }
-            getUserIdFromSessionConnection.close();
-            getUserIdFromSessionStatement.close();
-            getUserIdFromSessionResult.close();
-            return userId;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("❌ Error checking session", e);
         }
     }
-    public void deleteSession(String session_id){
-        String deleteSessionQuery="delete from master.dbo.sessions where session_id=?";
-        try{
-            Connection deleteSessionConnection= dataSource.getConnection();
-            PreparedStatement deleteSessionStatement=deleteSessionConnection.prepareStatement(deleteSessionQuery);
-            deleteSessionStatement.setString(1,session_id);
-            deleteSessionStatement.execute();
-            deleteSessionConnection.close();
-            deleteSessionStatement.close();
+
+    /**
+     * Lấy session_id từ user_id.
+     */
+    public String getSessionIdFromUser(String user_id) {
+        String query = "SELECT session_id FROM master.dbo.sessions WHERE user_id = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, user_id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? rs.getString("session_id") : null;
+            }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("❌ Error getting session ID from user", e);
+        }
+    }
+
+    /**
+     * Lấy user_id từ session_id.
+     */
+    public String getUserIdFromSession(String session_id) {
+        String query = "SELECT user_id FROM master.dbo.sessions WHERE session_id = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, session_id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? rs.getString("user_id") : null;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("❌ Error getting user ID from session", e);
+        }
+    }
+
+    /**
+     * Xóa session khỏi database.
+     */
+    public void deleteSession(String session_id) {
+        String query = "DELETE FROM master.dbo.sessions WHERE session_id = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, session_id);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("❌ Error deleting session", e);
         }
     }
 }

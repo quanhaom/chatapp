@@ -21,4 +21,8 @@ public class webviewController {
     public String forwardMainchat(@PathVariable String session_id){
         return "redirect:/mainchat.html?id="+session_id;
     }
+    @GetMapping("/signup")
+    public String signup(){
+        return webviewService.loadSignupPage();
+    }
 }

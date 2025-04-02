@@ -144,13 +144,19 @@ public class userService {
     private bcryptService bcryptService;
     @Async("AsyncExecutor")
     public CompletableFuture<ResponseEntity<String>> login(@RequestBody loginInfo loginInfo) {
+        // Validate email format for username
+        if (!isValidEmail(loginInfo.getUsername())) {
+            return CompletableFuture.completedFuture(ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("{\"error\":\"Invalid email format\"}"));
+        }
+
         String loginQuery = "SELECT user_id, password FROM master.dbo.[user] WHERE username = ?";
         System.out.println("Login attempt for username: " + loginInfo.getUsername());
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(loginQuery)) {
 
-            System.out.println("Connected to database! +++++++++++++++++++++++++++++++++++");
+            System.out.println("Connected to database!");
             ps.setString(1, loginInfo.getUsername());
             ResultSet rs = ps.executeQuery();
 
@@ -180,6 +186,12 @@ public class userService {
         }
     }
 
+    // Helper method to validate email format
+    private boolean isValidEmail(String email) {
+        return email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
+    }
+
+
 
     private String idGenerator() {
         return UUID.randomUUID().toString();
@@ -187,35 +199,67 @@ public class userService {
 
     @Async("AsyncExecutor")
     public CompletableFuture<ResponseEntity<String>> signUp(@RequestBody signupInfo signupInfo) {
+        // Validate input fields
+        if (signupInfo.getUsername() == null || signupInfo.getPassword() == null || signupInfo.getName() == null) {
+            return CompletableFuture.completedFuture(ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("{\"error\":\"Fields cannot be empty\"}"));
+        }
+
+        // Validate email format for username
+        if (!signupInfo.getUsername().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            return CompletableFuture.completedFuture(ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("{\"error\":\"Invalid email format\"}"));
+        }
+
+        // Validate password security
+        String password = signupInfo.getPassword();
+        if (!isStrongPassword(password)) {
+            return CompletableFuture.completedFuture(ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("{\"error\":\"Password must not start or end with 20** or 19**, must contain at least one special character and one uppercase letter\"}"));
+        }
+
         String checkExistenceQuery = "SELECT * FROM master.dbo.[user] WHERE username = ?";
         String signupQuery = "INSERT INTO master.dbo.[user] (user_id, username, password, name) VALUES (?, ?, ?, ?)";
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement checkStatement = connection.prepareStatement(checkExistenceQuery)) {
-                checkStatement.setString(1, signupInfo.getUsername());
-                ResultSet resultSet = checkStatement.executeQuery();
+            checkStatement.setString(1, signupInfo.getUsername());
+            ResultSet resultSet = checkStatement.executeQuery();
 
-                if (!resultSet.next()) {
-                    String hashedPassword = bcryptService.hashPassword(signupInfo.getPassword());
-                    String idCreated = idGenerator();
+            if (!resultSet.next()) { // User does not exist
+                String hashedPassword = bcryptService.hashPassword(password);
+                String idCreated = idGenerator();
 
-                    try (PreparedStatement signupStatement = connection.prepareStatement(signupQuery)) {
-                        signupStatement.setString(1, idCreated);
-                        signupStatement.setString(2, signupInfo.getUsername());
-                        signupStatement.setString(3, hashedPassword);
-                        signupStatement.setString(4, signupInfo.getName());
-                        signupStatement.executeUpdate();
+                try (PreparedStatement signupStatement = connection.prepareStatement(signupQuery)) {
+                    signupStatement.setString(1, idCreated);
+                    signupStatement.setString(2, signupInfo.getUsername());
+                    signupStatement.setString(3, hashedPassword);
+                    signupStatement.setString(4, signupInfo.getName());
+                    signupStatement.executeUpdate();
 
-                        String sessionId = sessionService.newSession(idCreated);
-                        return CompletableFuture.completedFuture(ResponseEntity.status(HttpStatus.OK).body(sessionId));
-                    }
-                } else {
-                    return CompletableFuture.completedFuture(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"error\":\"User already exists, please login\"}"));
+                    String sessionId = sessionService.newSession(idCreated);
+                    return CompletableFuture.completedFuture(ResponseEntity.status(HttpStatus.OK).body(sessionId));
                 }
-            } catch (SQLException ex) {
-                return CompletableFuture.completedFuture(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\":\"" + ex.getMessage() + "\"}"));
+            } else {
+                return CompletableFuture.completedFuture(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("{\"error\":\"User already exists, please login\"}"));
             }
+        } catch (SQLException ex) {
+            return CompletableFuture.completedFuture(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("{\"error\":\"" + ex.getMessage() + "\"}"));
+        }
     }
+
+    // Helper method to check password strength
+    private boolean isStrongPassword(String password) {
+        if (password.length() < 8) return false; // Minimum length of 8
+        if (password.matches("^(20|19)\\d{2}.*$")) return false; // Cannot start with 20** or 19**
+        if (password.matches(".*(20|19)\\d{2}$")) return false; // Cannot end with 20** or 19**
+        if (!password.matches(".*[!@#$%^&*()_+].*")) return false; // Must contain a special character
+        if (!password.matches(".*[A-Z].*")) return false; // Must contain an uppercase letter
+        return true;
+    }
+
 
     public String getUserNameFromId (String user_id) {
         String getName="select name from [user] where user_id=?";

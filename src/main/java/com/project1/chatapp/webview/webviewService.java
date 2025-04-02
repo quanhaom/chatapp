@@ -5,9 +5,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class webviewService {
     public String loadLoginPage(){
-        return "forward:/login.html";
+        return "login/login.html";
     }
     public String forwardMainchat(){
         return "forward:/mainchat/index.html";
+    }
+    public String loadSignupPage(){
+        return "forward:signup/signup.html";
     }
 }

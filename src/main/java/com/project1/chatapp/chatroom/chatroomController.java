@@ -51,5 +51,4 @@ public class chatroomController {
     public List<userService.userPublic> listUser(@PathVariable String session_id,@PathVariable String chat_id) {
         return chatroomService.listUsersInChatroom(session_id,chat_id);
     }
-    
 }
