@@ -169,8 +169,8 @@ body {
     overflow-y: auto;
 }
 
-.friendlist-container h1 {
-    margin-bottom: 20px;
+.friendlist-container {
+    overflow-x: auto; /* Cho phép lướt qua phải */
 }
 
 .search-container {
@@ -213,4 +213,41 @@ body {
     margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
+}
+#friendList {
+    display: flex; /* Sử dụng flexbox để sắp xếp theo hàng ngang */
+    padding: 10px;
+    margin: 0; /* Bỏ margin */
+    list-style: none; /* Bỏ dấu chấm trước các item */
+}
+
+.friend-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-right: 15px;
+    position: relative;
+}
+
+.avatar-wrapper {
+    position: relative;
+}
+
+.friend-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Tick hoặc chấm xanh online */
+.online-indicator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    background-color: #22c55e; /* Tailwind green-500 */
+    border: 2px solid white;
+    border-radius: 50%;
 }

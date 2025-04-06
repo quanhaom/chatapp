@@ -91,9 +91,6 @@ public class sessionService {
         }
     }
 
-    /**
-     * Xóa session khỏi database.
-     */
     public void deleteSession(String session_id) {
         String query = "DELETE FROM master.dbo.sessions WHERE session_id = ?";
 
@@ -101,9 +98,17 @@ public class sessionService {
              PreparedStatement stmt = conn.prepareStatement(query)) {
 
             stmt.setString(1, session_id);
-            stmt.executeUpdate();
+            int affectedRows = stmt.executeUpdate(); // lưu số dòng bị ảnh hưởng
+
+            if (affectedRows > 0) {
+                System.out.println("✅ Xoá session thành công");
+            } else {
+                System.out.println("⚠️ Không tìm thấy session để xoá");
+            }
+
         } catch (SQLException e) {
-            throw new RuntimeException("❌ Error deleting session", e);
+            throw new RuntimeException("❌ Lỗi khi xoá session", e);
         }
     }
+
 }

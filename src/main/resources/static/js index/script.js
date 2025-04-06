@@ -253,6 +253,33 @@ function escapeHtml(unsafe) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+document.addEventListener("DOMContentLoaded", () => {
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    logoutBtn.addEventListener("click", (e) => {
+        e.preventDefault(); // Ngăn chặn hành động mặc định của liên kết
+
+        const session_id = localStorage.getItem("session_id"); // Lấy session_id từ localStorage
+        if (!session_id) {
+            window.location.href = "/login"; // Nếu không có session_id, chuyển đến trang login
+            return;
+        }
+
+        // Gọi API để xóa session
+        fetch(`/app/session/${session_id}/delete`, {
+            method: "DELETE" // Phương thức DELETE để xóa session
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Failed to logout");
+            localStorage.removeItem("session_id"); // Xoá session từ localStorage
+            window.location.href = "/login"; // Chuyển đến trang login
+        })
+        .catch(error => {
+            console.error("Logout failed:", error);
+            alert("Error logging out. Try again."); // Hiển thị thông báo lỗi nếu logout thất bại
+        });
+    });
+});
 
 function createSubmitForm() {
     const conversationDiv = document.getElementsByClassName('conversation-form')[0];

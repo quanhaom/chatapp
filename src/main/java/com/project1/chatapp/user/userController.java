@@ -3,6 +3,9 @@ package com.project1.chatapp.user;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import com.project1.chatapp.sessions.sessionService;
+
 import java.util.Map;
 
 import java.util.List;
@@ -52,4 +55,18 @@ public class userController {
     public List<userService.friendRequestSent> getRequestsSent(@PathVariable("session_id") String session_id){
         return userService.loadFriendRequestSent(session_id);
     }
+    @RestController
+    @RequestMapping("/app")
+    public class SessionController {
+
+        @Autowired
+        private sessionService sessionService;
+
+        @DeleteMapping("/session/{session_id}/delete")
+        public ResponseEntity<?> deleteSession(@PathVariable String session_id) {
+            sessionService.deleteSession(session_id);
+            return ResponseEntity.ok().build();
+        }
+    }
+
 }
