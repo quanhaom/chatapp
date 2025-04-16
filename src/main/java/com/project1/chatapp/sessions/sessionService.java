@@ -72,10 +72,6 @@ public class sessionService {
             throw new RuntimeException("❌ Error getting session ID from user", e);
         }
     }
-
-    /**
-     * Lấy user_id từ session_id.
-     */
     public String getUserIdFromSession(String session_id) {
         String query = "SELECT user_id FROM master.dbo.sessions WHERE session_id = ?";
 

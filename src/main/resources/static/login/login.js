@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Vô hiệu hóa nút Login ban đầu
     loginButton.disabled = true;
-    loginButton.style.opacity = "0.6";
+    loginButton.style.opacity = "0.4";
 
     // Kiểm tra input để kích hoạt nút login
     function validateInputs() {

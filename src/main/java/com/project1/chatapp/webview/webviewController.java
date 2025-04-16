@@ -25,4 +25,48 @@ public class webviewController {
     public String signup(){
         return webviewService.loadSignupPage();
     }
+    @GetMapping("/about")
+    public String about() {
+        return "forward:/pages/about.html";
+    }
+
+    @GetMapping("/blog")
+    public String blog() {
+        return "forward:/pages/blog.html";
+    }
+
+    @GetMapping("/jobs")
+    public String jobs() {
+        return "forward:/pages/jobs.html";
+    }
+
+    @GetMapping("/help")
+    public String help() {
+        return "forward:/pages/help.html";
+    }
+
+    @GetMapping("/api")
+    public String api() {
+        return "forward:/pages/api.html";
+    }
+
+    @GetMapping("/privacy")
+    public String privacy() {
+        return "forward:/pages/privacy.html";
+    }
+
+    @GetMapping("/terms")
+    public String terms() {
+        return "forward:/pages/terms.html";
+    }
+
+    @GetMapping("/location")
+    public String location() {
+        return "forward:/pages/location.html";
+    }
+
+    @GetMapping("/lite")
+    public String lite() {
+        return "forward:/pages/lite.html";
+    }
 }
