@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Lấy giá trị từ input
         const email = document.getElementById("email").value.trim();
         const password = document.getElementById("password").value.trim();
+		const repassword = document.getElementById("repassword").value.trim();
         const fullName = document.getElementById("fullName").value.trim();
 
         // Debug dữ liệu nhập vào
@@ -26,6 +27,10 @@ document.addEventListener("DOMContentLoaded", function () {
             alert("❌ Please fill in all fields.");
             return;
         }
+		if (repassword != password){
+			alert("Password and repassword not the same.");
+			return;
+		}
 
         const signupInfo = { username: email, password, name: fullName };
 

@@ -1,28 +1,22 @@
 package com.project1.chatapp.config.webSocketConfig;
 
-import com.project1.chatapp.sessions.sessionService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.web.socket.CloseStatus;
-import org.springframework.web.socket.WebSocketMessage;
-import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.*;
+import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-@Configuration
-public class webSocketHandler implements org.springframework.web.socket.WebSocketHandler {
 
-    @Autowired
-    private sessionService sessionService;
+@Component
+public class webSocketHandler implements org.springframework.web.socket.WebSocketHandler {
 
     private final Map<String, WebSocketSession> sessionMapping = new ConcurrentHashMap<>();
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         String sessionId = session.getHandshakeHeaders().getFirst("session-id");
-        if (sessionService.checkSession(sessionId)) {
+        if (sessionId != null) {
             sessionMapping.put(sessionId, session);
-            System.out.println("WS Connected");
+            System.out.println("WS Connected with session: " + sessionId);
         } else {
             session.close(CloseStatus.NOT_ACCEPTABLE.withReason("Invalid session"));
         }
@@ -38,7 +32,6 @@ public class webSocketHandler implements org.springframework.web.socket.WebSocke
                 .orElse(null);
 
         if (sessionId != null) {
-            sessionService.deleteSession(sessionId);
             sessionMapping.remove(sessionId);
             System.out.println("Disconnected session: " + sessionId);
         }
@@ -46,16 +39,30 @@ public class webSocketHandler implements org.springframework.web.socket.WebSocke
 
     @Override
     public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
-        // Handle incoming WebSocket messages here
+        // Handle incoming messages from the client
+        if (message instanceof TextMessage) {
+            String payload = ((TextMessage) message).getPayload();
+            System.out.println("Received message: " + payload);
+
+            // Optionally, broadcast the message to all connected sessions
+            for (WebSocketSession s : sessionMapping.values()) {
+                s.sendMessage(new TextMessage("Broadcast: " + payload));
+            }
+        }
     }
 
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
-        // Handle transport errors
+        // Log the error
+        System.err.println("Transport error occurred: " + exception.getMessage());
+
+        // Optionally, close the session if an error occurs
+        session.close(CloseStatus.SERVER_ERROR.withReason("Transport error occurred"));
     }
 
     @Override
     public boolean supportsPartialMessages() {
+        // Return false, assuming the messages are not partial
         return false;
     }
 }

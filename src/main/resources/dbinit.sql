@@ -5,6 +5,7 @@ CREATE TABLE [user] (
                         name NVARCHAR(100) NOT NULL
 );
 
+//test account
 INSERT INTO [user] (user_id, username, password, name)
 VALUES ('user123', 'newuser', 'password123', 'New User');
 GO

@@ -69,4 +69,8 @@ public class webviewController {
     public String lite() {
         return "forward:/pages/lite.html";
     }
+    @GetMapping("/profile")
+    public String profile() {
+        return "forward:/pages/profile.html";
+    }
 }

@@ -253,33 +253,42 @@ function escapeHtml(unsafe) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+
+
 document.addEventListener("DOMContentLoaded", () => {
     const logoutBtn = document.getElementById("logoutBtn");
+	const profileBtn = document.getElementById("profileBtn");
 
+    // Logout functionality
     logoutBtn.addEventListener("click", (e) => {
-        e.preventDefault(); // Ngăn chặn hành động mặc định của liên kết
+        e.preventDefault();
 
-        const session_id = localStorage.getItem("session_id"); // Lấy session_id từ localStorage
         if (!session_id) {
-            window.location.href = "/login"; // Nếu không có session_id, chuyển đến trang login
+            window.location.href = "/login"; // If no session_id, redirect to login
             return;
         }
 
-        // Gọi API để xóa session
+        // Call API to delete session
         fetch(`/app/session/${session_id}/delete`, {
-            method: "DELETE" // Phương thức DELETE để xóa session
+            method: "DELETE" // DELETE method to remove session
         })
         .then(response => {
             if (!response.ok) throw new Error("Failed to logout");
-            localStorage.removeItem("session_id"); // Xoá session từ localStorage
-            window.location.href = "/login"; // Chuyển đến trang login
+            localStorage.removeItem("session_id"); // Remove session from localStorage
+            window.location.href = "/login"; // Redirect to login page
         })
         .catch(error => {
             console.error("Logout failed:", error);
-            alert("Error logging out. Try again."); // Hiển thị thông báo lỗi nếu logout thất bại
+            alert("Error logging out. Try again."); // Show error message if logout fails
         });
     });
+
+    // Profile button functionality
+    profileBtn.addEventListener("click", () => {
+        window.location.href = "/profile"; // Redirect to the profile page
+    });
 });
+
 
 function createSubmitForm() {
     const conversationDiv = document.getElementsByClassName('conversation-form')[0];
