@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("📤 Sending request:", signupInfo);
 
         // Gửi request đến API `/signup`
-        fetch("/signup", {
+        fetch("/app/signup", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

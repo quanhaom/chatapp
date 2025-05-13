@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
             password: password
         };
 
-        fetch('/app.login', {
+        fetch('/app/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
