@@ -23,9 +23,11 @@ public class userController {
     // ✅ Tiện ích kiểm tra session
     private void checkSession(String session_id) {
         if (!sessionService.checkSession(session_id)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "❌ Invalid or expired session");
+            // Redirect đến trang login
+            throw new ResponseStatusException(HttpStatus.FOUND, "Redirecting to login page");
         }
     }
+
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody userService.loginInfo loginInfo){
