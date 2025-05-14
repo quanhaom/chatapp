@@ -27,13 +27,12 @@ contactsLink.href = `friendlist.html?id=${session_id}`;
 
 connectWebSocket()
 function connectWebSocket() {
-
     if (!session_id) {
         console.error('Session ID is not available.');
         return;
     }
 
-    const wsUrl = '/ws';
+    const wsUrl = 'wss://localhost:8443/ws'; // Use 'wss://' for secure WebSocket connection
 
     client = new StompJs.Client({
         brokerURL: wsUrl,
@@ -43,24 +42,32 @@ function connectWebSocket() {
         debug: function (str) {
             console.log('[DEBUG]', str);
         },
-        reconnectDelay: 5000,
-        heartbeatIncoming: 4000,
-        heartbeatOutgoing: 4000,
+        reconnectDelay: 5000, // Retry connection every 5 seconds if disconnected
+        heartbeatIncoming: 4000, // Heartbeat check for incoming messages every 4 seconds
+        heartbeatOutgoing: 4000, // Heartbeat check for outgoing messages every 4 seconds
     });
 
     client.onConnect = function (frame) {
         console.log('Connected to WebSocket server');
+        // Optionally, you can subscribe to a topic here
     };
-    client.onMessage=function (event) {
-        loadMessages(session_id,chat_id_current)
-    }
+
+    client.onMessage = function (event) {
+        // Ensure chat_id_current is defined
+        if (chat_id_current) {
+            loadMessages(session_id, chat_id_current); // Handle incoming messages
+        } else {
+            console.error('chat_id_current is not defined');
+        }
+    };
 
     client.onStompError = function (frame) {
-        console.log('WebSocket error:', frame.headers['message'], frame.body);
+        console.error('WebSocket error:', frame.headers['message'], frame.body);
     };
 
     client.activate();
 }
+
 
 // UI STUFFS
 
@@ -319,12 +326,17 @@ function createSubmitForm() {
 
 // WS MESSAGE FUNCTION
 
+let subscription = null; // Variable to hold the subscription object
+
+// Function to subscribe to a chat
 function newSubscription(chat_id) {
-    console.log("subcribed to chat")
-    client.subscribe(`/topic/${chat_id}`, function (message) {
+    console.log("Subscribed to chat");
+    subscription = client.subscribe(`/topic/${chat_id}`, function (message) {
         loadMessages(session_id, chat_id); // Handle incoming messages
     });
 }
+
+// Function to send a message to a chat
 function sendMessage(session_id, chat_id, message, timestamp) {
     client.publish({
         destination: `/app/${session_id}/${chat_id}/sendm`,
@@ -336,9 +348,17 @@ function sendMessage(session_id, chat_id, message, timestamp) {
         }),
     });
 }
-function unsubscribe(chat_id){
-    client.unsubscribe(`/topic/${session_id}/${chat_id}`);
+
+// Function to unsubscribe from a chat
+function unsubscribe(chat_id) {
+    if (subscription) {
+        subscription.unsubscribe(); // Unsubscribe using the subscription object
+        console.log(`Unsubscribed from chat ${chat_id}`);
+    } else {
+        console.log(`No active subscription for chat ${chat_id}`);
+    }
 }
+
 
 // MESSAGE DATA
 

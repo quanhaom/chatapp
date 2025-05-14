@@ -10,7 +10,7 @@ if errorlevel 1 (
 )
 
 echo ⏳Waiting for Docker to run containers
-timeout /t 36
+timeout /t 15
 echo 🌐 Opening chat app
 start https://localhost:8443
 

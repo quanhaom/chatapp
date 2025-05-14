@@ -54,8 +54,6 @@ public class sessionService {
             throw new RuntimeException("❌ Error checking session", e);
         }
     }
-    
-    
 
     /**
      * Lấy session_id từ user_id.
