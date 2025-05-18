@@ -527,65 +527,65 @@ document.addEventListener('DOMContentLoaded', (event) => {
 	})
 
 
-async function loadMessages(session_id, chat_id) {
-    console.log('fetching data ' + session_id + ' ' + chat_id);
-    try {
-        const response = await fetch(`/app/${session_id}/${chat_id}/loadm`);
-        if (response.ok) {
-            const responseData = await response.json();
-            console.log('phq ' + responseData.messages);
-            const chatGrid = document.getElementById('chat-content-fetch');
-            chatGrid.innerHTML = '';
+	async function loadMessages(session_id, chat_id) {
+	    console.log('fetching data ' + session_id + ' ' + chat_id);
 
-            responseData.messages.forEach(message => {
+	    try {
+	        const response = await fetch(`/app/${session_id}/${chat_id}/loadm`);
+	        if (!response.ok) {
+	            console.error('❌ Failed to fetch messages: HTTP ' + response.status);
+	            return;
+	        }
 
-                let chatHTML = '';
+	        const responseData = await response.json();
+	        console.log('📩 Received messages:', responseData.messages);
 
-                if (message.sentBySession) {
-                    chatHTML = `
-                    <li class="conversation-item">
-                    `;
-                } else {
-                    chatHTML = `
-                    <li class="conversation-item me">
-                    `;
-                }
+	        const chatGrid = document.getElementById('chat-content-fetch');
+	        if (!chatGrid) {
+	            console.error("❌ Element with id 'chat-content-fetch' not found in DOM.");
+	            return;
+	        }
 
-                chatHTML += `
-                    <div class="conversation-item-side">
-                        <img class="conversation-item-image" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60" alt="">
-                    </div>
-                    <div class="conversation-item-content">
-                        <div class="conversation-item-wrapper">
-                            <div class="conversation-item-box">
-                                <div class="conversation-item-text">
-                                    <p>${escapeHtml(message.name)}: ${escapeHtml(message.message)}</p>
-                                    <div class="conversation-item-time">${message.time}</div>
-                                </div>
-                                <div class="conversation-item-dropdown">
-                                    <button type="button" class="conversation-item-dropdown-toggle"><i class="ri-more-2-line"></i></button>
-                                    <ul class="conversation-item-dropdown-list">
-                                        <li><a href="#"><i class="ri-share-forward-line"></i> Forward</a></li>
-                                        <li><a href="#"><i class="ri-delete-bin-line"></i> Delete</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    </li>
-                `;
+	        chatGrid.innerHTML = '';
 
-                chatGrid.insertAdjacentHTML('beforeend', chatHTML);
-            });
-            chatGrid.scrollTop = chatGrid.scrollHeight;
-        } else {
-            console.error('Failed to fetch messages');
-        }
-    } catch (error) {
-        console.error('Error fetching messages:', error);
-    }
-}
+	        responseData.messages.forEach(message => {
+	            let chatHTML = `
+	                <li class="conversation-item ${message.sentBySession ? '' : 'me'}">
+	                    <div class="conversation-item-side">
+	                        <img class="conversation-item-image" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=500&q=60" alt="">
+	                    </div>
+	                    <div class="conversation-item-content">
+	                        <div class="conversation-item-wrapper">
+	                            <div class="conversation-item-box">
+	                                <div class="conversation-item-text">
+	                                    <p>${escapeHtml(message.name)}: ${escapeHtml(message.message)}</p>
+	                                    <div class="conversation-item-time">${message.time}</div>
+	                                </div>
+	                                <div class="conversation-item-dropdown">
+	                                    <button type="button" class="conversation-item-dropdown-toggle">
+	                                        <i class="ri-more-2-line"></i>
+	                                    </button>
+	                                    <ul class="conversation-item-dropdown-list">
+	                                        <li><a href="#"><i class="ri-share-forward-line"></i> Forward</a></li>
+	                                        <li><a href="#"><i class="ri-delete-bin-line"></i> Delete</a></li>
+	                                    </ul>
+	                                </div>
+	                            </div>
+	                        </div>
+	                    </div>
+	                </li>
+	            `;
 
+	            chatGrid.insertAdjacentHTML('beforeend', chatHTML);
+	        });
+
+	        // Cuộn xuống tin nhắn mới nhất
+	        chatGrid.scrollTop = chatGrid.scrollHeight;
+
+	    } catch (error) {
+	        console.error('💥 Error fetching messages:', error);
+	    }
+	}
 
 
 // Chat option
@@ -788,7 +788,7 @@ function handleKickFromChatSubmit(event) {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                return response.json();
+                return response.text();
             })
             .then(data => {
                 console.log(`User ${user_id} kicked successfully`, data);
@@ -974,11 +974,11 @@ document.addEventListener("DOMContentLoaded", function () {
 	                    if (chatId) {
 	                        // Chat riêng đã tồn tại, load chat
 	                        console.log("Chat room exists:", chatId);
-	                        loadchat(chatId);
+	                        loadMessages(session_id,chatId);
 	                    } else {
 	                        // Tạo chat room mới rồi load
 	                        const newGroup = {
-	                            name: `Chat riêng: ${friend.username}`,
+	                            name: `${friend.username}`,
 	                            session_id: session_id  // biến session_id hiện tại
 	                        };
 	                        fetch(`/app/${session_id}/createChatroom`, {
@@ -994,10 +994,9 @@ document.addEventListener("DOMContentLoaded", function () {
 	                            console.log("Created new chat room:", newChatId);
 	                            // Thêm 2 người vào chat room
 	                            Promise.all([
-	                                fetch(`/app/${session_id}/${newChatId}/${currentUserId}/add`, { method: 'GET' }),
 	                                fetch(`/app/${session_id}/${newChatId}/${friend.user_id}/add`, { method: 'GET' })
 	                            ]).then(() => {
-	                                loadchat(newChatId);
+	                                loadMessages(session_id,newChatId);
 	                            }).catch(err => console.error("Error adding users to chat:", err));
 	                        })
 	                        .catch(err => console.error(err));

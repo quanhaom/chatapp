@@ -289,42 +289,46 @@ public class chatroomService {
             return list;
         }
     }
-    
-    public String getPrivateChatBetweenUsers(String sessionid, String userId2) {
-        String chatId = "";
+    public String getPrivateChatBetweenUsers(String sessionId, String userId2) {
         String userId1 = null;
+        String chatId = null;
 
-        // 1. Lấy user_id từ sessionid
-        String sqlGetUserId = "SELECT user_id FROM sessions WHERE sessionid = ?";
-        String sqlGetChatId = "SELECT chat_id FROM joinedchat WHERE user_id IN (?, ?) GROUP BY chat_id HAVING COUNT(DISTINCT user_id) = 2";
+        // 1. Lấy user_id từ session
+        String sqlGetUserId = "SELECT user_id FROM sessions WHERE session_id = ?";
+
+        String sqlCheckPrivateChat =" SELECT TOP 1 chat_id FROM joinedchat WHERE user_id IN (?, ?) GROUP BY chat_id HAVING COUNT(DISTINCT user_id) = 2;";
+
 
         try (Connection conn = dataSource.getConnection()) {
-            // Lấy userId1
+
+            // Lấy userId1 từ session
             try (PreparedStatement ps1 = conn.prepareStatement(sqlGetUserId)) {
-                ps1.setString(1, sessionid);
+                ps1.setString(1, sessionId);
                 try (ResultSet rs1 = ps1.executeQuery()) {
                     if (rs1.next()) {
                         userId1 = rs1.getString("user_id");
                     } else {
-                        return null;
+                        return null; // Không tìm thấy user
                     }
                 }
             }
-            try (PreparedStatement ps2 = conn.prepareStatement(sqlGetChatId)) {
+
+            // Kiểm tra xem có đoạn chat riêng nào không
+            try (PreparedStatement ps2 = conn.prepareStatement(sqlCheckPrivateChat)) {
                 ps2.setString(1, userId1);
                 ps2.setString(2, userId2);
-
                 try (ResultSet rs2 = ps2.executeQuery()) {
                     if (rs2.next()) {
                         chatId = rs2.getString("chat_id");
                     }
                 }
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
-            // Xử lý lỗi
         }
 
-        return chatId;
+        return chatId; // null nếu không có
     }
+
 }
