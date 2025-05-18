@@ -52,7 +52,7 @@ public class userController {
         return userService.getListFriend(session_id);
     }
 
-    @GetMapping("/app/user/{user_id}/name")
+    @GetMapping("/user/{user_id}/name")
     public ResponseEntity<String> getUserName(@PathVariable String user_id) {
         String name = userService.getUserNameFromId(user_id);
         if (name != null) {

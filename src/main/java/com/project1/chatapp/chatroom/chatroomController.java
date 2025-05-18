@@ -58,7 +58,7 @@ public class chatroomController {
         return chatroomService.listUsersInChatroom(session_id,chat_id);
     }
     
-    @GetMapping("app/chat/existBetween/{sessionid}/{userId2}")
+    @GetMapping("/app/chat/existBetween/{sessionid}/{userId2}")
     public ResponseEntity<String> getPrivateChatBetweenUsers(
             @PathVariable String sessionid,
             @PathVariable String userId2) {

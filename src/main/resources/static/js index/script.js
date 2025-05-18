@@ -965,12 +965,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 	        button.addEventListener("click", () => {
 	            console.log(`Clicked on friend: ${friend.username} (ID: ${friend.user_id})`);
-
-				
-				/*
-				
-				
-	            // Kiểm tra chat riêng giữa currentUserId và friend.user_id
 	            fetch(`/app/chat/existBetween/${session_id}/${friend.user_id}`)
 	                .then(response => {
 	                    if (!response.ok) throw new Error("Failed to check chat");
@@ -980,7 +974,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	                    if (chatId) {
 	                        // Chat riêng đã tồn tại, load chat
 	                        console.log("Chat room exists:", chatId);
-	                        loadChat(chatId);
+	                        loadchat(chatId);
 	                    } else {
 	                        // Tạo chat room mới rồi load
 	                        const newGroup = {
@@ -1003,15 +997,13 @@ document.addEventListener("DOMContentLoaded", function () {
 	                                fetch(`/app/${session_id}/${newChatId}/${currentUserId}/add`, { method: 'GET' }),
 	                                fetch(`/app/${session_id}/${newChatId}/${friend.user_id}/add`, { method: 'GET' })
 	                            ]).then(() => {
-	                                loadChat(newChatId);
+	                                loadchat(newChatId);
 	                            }).catch(err => console.error("Error adding users to chat:", err));
 	                        })
 	                        .catch(err => console.error(err));
 	                    }
 	                })
 	                .catch(err => console.error(err));
-					
-					*/
 					
 	        });
 
