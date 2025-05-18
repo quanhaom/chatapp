@@ -298,7 +298,6 @@ public class chatroomService {
 
         String sqlCheckPrivateChat =" SELECT TOP 1 chat_id FROM joinedchat WHERE user_id IN (?, ?) GROUP BY chat_id HAVING COUNT(DISTINCT user_id) = 2;";
 
-
         try (Connection conn = dataSource.getConnection()) {
 
             // Lấy userId1 từ session

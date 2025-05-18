@@ -188,7 +188,7 @@ document.querySelectorAll('.conversation-back').forEach(function (item) {
 })
 
 // Define loadchat globally
-function loadchat(session_id) {
+function loadchat(session_id, chatId = null) {
     fetch(`/app/${session_id}/loadchat`)
         .then(response => response.json())
         .then(data => {
@@ -196,9 +196,17 @@ function loadchat(session_id) {
 
             // Clear existing messages
             messagesList.innerHTML = '';
+
             data.forEach(chatroomInfo => {
                 const listItem = document.createElement("li");
                 listItem.classList.add("content-message");
+
+                // Nếu chatId được truyền và khớp, thêm class 'active' để làm sáng
+                const isActive = chatId && chatId === chatroomInfo.chat_id;
+                if (isActive) {
+                    listItem.classList.add("active-chatroom");
+                }
+
                 listItem.innerHTML = `
                     <a href="#" data-conversation="${chatroomInfo.chat_id}">
                         <img class="content-message-image" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60" alt="">
@@ -208,33 +216,49 @@ function loadchat(session_id) {
                     </a>
                 `;
 
-                listItem.addEventListener("click", function(event) {
-                    event.preventDefault();  // Prevent default anchor behavior
+
+                listItem.addEventListener("click", function (event) {
+                    event.preventDefault();
                     const conversationId = this.querySelector("a").getAttribute("data-conversation");
-                    console.log("Conversation ID:", conversationId);
+
+                    // Xóa lớp active trước đó
+                    document.querySelectorAll(".content-message").forEach(el => el.classList.remove("active-chatroom"));
+                    this.classList.add("active-chatroom");
+
                     const userDiv = createConversationUser(chatroomInfo.name);
                     document.querySelector(".conversation").prepend(userDiv);
                     newSubscription(conversationId);
                     chat_id_current = conversationId;
 
-                    // Clear the existing conversation items
+                    // Clear old messages
                     const conversationList = document.querySelector(".conversation-list");
                     conversationList.innerHTML = '';
-                    loadMessages(session_id,chat_id_current)
+
+                    loadMessages(session_id, chat_id_current);
+
+                    // Load submit form
                     const formDiv = createSubmitForm();
                     document.querySelector(".conversation").appendChild(formDiv);
-                    addChatOption()
+                    addChatOption();
                 });
 
                 messagesList.appendChild(listItem);
+
+                // Nếu chatId khớp, tự động click để load message
+                if (isActive) {
+                    listItem.querySelector("a").click();
+                }
             });
         })
         .catch(error => console.error('Error:', error));
 }
 
-document.addEventListener("DOMContentLoaded", function() {
-    loadchat(session_id);
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    loadchat(session_id); // hoặc truyền thêm chatId nếu có
 });
+
 
 
 
@@ -953,62 +977,60 @@ document.addEventListener("DOMContentLoaded", function () {
             });
     }
 
-    // Display friends in the UI
-
-
 	function displayFriends() {
-	    friendList.innerHTML = "";
-	    friends.forEach(friend => {
-	        const button = document.createElement("button");
-	        button.textContent = friend.username;
-	        button.className = "friend-button";
+		    friendList.innerHTML = "";
+		    friends.forEach(friend => {
+		        const button = document.createElement("button");
+		        button.textContent = friend.username;
+		        button.className = "friend-button";
 
-	        button.addEventListener("click", () => {
-	            console.log(`Clicked on friend: ${friend.username} (ID: ${friend.user_id})`);
-	            fetch(`/app/chat/existBetween/${session_id}/${friend.user_id}`)
-	                .then(response => {
-	                    if (!response.ok) throw new Error("Failed to check chat");
-	                    return response.text(); // giả sử trả về chatId hoặc ""
-	                })
-	                .then(chatId => {
-	                    if (chatId) {
-	                        // Chat riêng đã tồn tại, load chat
-	                        console.log("Chat room exists:", chatId);
-	                        loadMessages(session_id,chatId);
-	                    } else {
-	                        // Tạo chat room mới rồi load
-	                        const newGroup = {
-	                            name: `${friend.username}`,
-	                            session_id: session_id  // biến session_id hiện tại
-	                        };
-	                        fetch(`/app/${session_id}/createChatroom`, {
-	                            method: 'POST',
-	                            headers: { 'Content-Type': 'application/json' },
-	                            body: JSON.stringify(newGroup)
-	                        })
-	                        .then(resp => {
-	                            if (!resp.ok) throw new Error("Failed to create chat room");
-	                            return resp.text(); // trả về chatId mới (cần backend trả về đúng chatId)
-	                        })
-	                        .then(newChatId => {
-	                            console.log("Created new chat room:", newChatId);
-	                            // Thêm 2 người vào chat room
-	                            Promise.all([
-	                                fetch(`/app/${session_id}/${newChatId}/${friend.user_id}/add`, { method: 'GET' })
-	                            ]).then(() => {
-	                                loadMessages(session_id,newChatId);
-	                            }).catch(err => console.error("Error adding users to chat:", err));
-	                        })
-	                        .catch(err => console.error(err));
-	                    }
-	                })
-	                .catch(err => console.error(err));
-					
-	        });
+		        button.addEventListener("click", () => {
+		            console.log(`Clicked on friend: ${friend.username} (ID: ${friend.user_id})`);
+		            fetch(`/app/chat/existBetween/${session_id}/${friend.user_id}`)
+		                .then(response => {
+		                    if (!response.ok) throw new Error("Failed to check chat");
+		                    return response.text(); // giả sử trả về chatId hoặc ""
+		                })
+		                .then(chatId => {
+		                    if (chatId) {
+		                        // Chat riêng đã tồn tại, load chat
+		                        console.log("Chat room exists:", chatId);
+		                        window.location.href = `/mainchat.html?id=${session_id}&chatId=${chatId}`
+		                    } else {
+		                        // Tạo chat room mới rồi load
+		                        const newGroup = {
+		                            name: `${friend.username}`,
+		                            session_id: session_id  // biến session_id hiện tại
+		                        };
+		                        fetch(`/app/${session_id}/createChatroom`, {
+		                            method: 'POST',
+		                            headers: { 'Content-Type': 'application/json' },
+		                            body: JSON.stringify(newGroup)
+		                        })
+		                        .then(resp => {
+		                            if (!resp.ok) throw new Error("Failed to create chat room");
+		                            return resp.text(); // trả về chatId mới (cần backend trả về đúng chatId)
+		                        })
+		                        .then(newChatId => {
+		                            console.log("Created new chat room:", newChatId);
+		                            // Thêm 2 người vào chat room
+		                            Promise.all([
+		                                fetch(`/app/${session_id}/${newChatId}/${friend.user_id}/add`, { method: 'GET' })
+		                            ]).then(() => {
+		                                window.location.href = `/mainchat.html?id=${session_id}&chatId=${newChatId}`
+		                            }).catch(err => console.error("Error adding users to chat:", err));
+		                        })
+		                        .catch(err => console.error(err));
+		                    }
+		                })
+		                .catch(err => console.error(err));
+						
+		        });
 
-	        friendList.appendChild(button);
-	    });
-	}
+		        friendList.appendChild(button);
+		    });
+		}
+
 
     // Send friend request to a user
     function sendFriendRequest(user_id) {
